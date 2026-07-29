@@ -1,0 +1,30 @@
+"""Enum values used by the covered RoutingModel subset."""
+
+
+class FirstSolutionStrategy:
+    UNSET = 0
+    GLOBAL_CHEAPEST_ARC = 1
+    LOCAL_CHEAPEST_ARC = 2
+    PATH_CHEAPEST_ARC = 3
+    PATH_MOST_CONSTRAINED_ARC = 4
+    EVALUATOR_STRATEGY = 5
+    ALL_UNPERFORMED = 6
+    BEST_INSERTION = 7
+    PARALLEL_CHEAPEST_INSERTION = 8
+    LOCAL_CHEAPEST_INSERTION = 9
+    SAVINGS = 10
+    SWEEP = 11
+    CHRISTOFIDES = 13
+    SEQUENTIAL_CHEAPEST_INSERTION = 14
+    AUTOMATIC = 15
+
+
+class LocalSearchMetaheuristic:
+    UNSET = 0
+    AUTOMATIC = 6
+    GREEDY_DESCENT = 1
+    GUIDED_LOCAL_SEARCH = 2
+    SIMULATED_ANNEALING = 3
+    TABU_SEARCH = 4
+    GENERIC_TABU_SEARCH = 5
+
