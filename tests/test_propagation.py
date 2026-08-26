@@ -167,6 +167,29 @@ def test_lossy_dtype_coercion_is_rejected():
         )
 
 
+def test_vectorized_overflow_scan_handles_int64_minimum():
+    minimum = np.iinfo(np.int64).min
+    result = propagate_bounds(
+        np.array([minimum], dtype=np.int64),
+        [0],
+        [0, 1],
+        [0],
+        [0],
+        variable_lower_bounds=[0],
+        variable_upper_bounds=[0],
+    )
+    assert result.feasible
+
+
+def test_literal_int64_minimum_is_rejected_without_abs_overflow():
+    minimum = np.iinfo(np.int64).min
+    with pytest.raises(ValueError, match="literal"):
+        propagate_bounds(
+            [], [], [0], [], [],
+            np.array([minimum], dtype=np.int64), [0, 1], [0], [1],
+        )
+
+
 def test_round_limit_does_not_silently_report_a_fixed_point():
     with pytest.raises(RuntimeError, match="did not converge"):
         propagate_bounds(

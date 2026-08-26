@@ -19,6 +19,12 @@ class PropagationResult:
     rounds: int
 
 
+def _max_abs(values: np.ndarray) -> int:
+    if values.size == 0:
+        return 0
+    return max(abs(int(values.min())), abs(int(values.max())))
+
+
 def _offsets(offsets: np.ndarray, item_count: int, name: str) -> int:
     if offsets.ndim != 1 or len(offsets) == 0:
         raise ValueError(f"{name} must be a nonempty one-dimensional array")
@@ -46,13 +52,18 @@ def _validate_problem(
         raise ValueError("constraint lower bound exceeds upper bound")
     if np.any(var < 0) or np.any(var >= value_count):
         raise ValueError("variable index outside the bounds vector")
-    if np.any(literals == 0) or np.any(np.abs(literals.astype(object)) > value_count):
+    if np.any(literals == 0) or (
+        literals.size
+        and (
+            np.any(literals == np.iinfo(np.int64).min)
+            or np.any(np.abs(literals) > value_count)
+        )
+    ):
         raise ValueError("literal references a variable outside the bounds vector")
     if lower is not None:
         max_terms = int(np.max(np.diff(linear_offsets), initial=0))
-        max_coefficient = max((abs(int(value)) for value in coeff), default=0)
-        max_bound = max((abs(int(value)) for value in lower), default=0)
-        max_bound = max(max_bound, max((abs(int(value)) for value in upper), default=0))
+        max_coefficient = _max_abs(coeff)
+        max_bound = max(_max_abs(lower), _max_abs(upper))
         if max_terms * max_coefficient * max_bound > (1 << 63) - 1:
             raise OverflowError("linear activity bounds might not fit in int64")
     return n_linear, n_clauses
@@ -146,8 +157,8 @@ def validate_assignment(
         constraint_ub_raw, literal_raw, clause_offsets_raw, len(values_raw),
     )
     max_terms = int(np.max(np.diff(linear_offsets_raw), initial=0))
-    max_coefficient = max((abs(int(value)) for value in coeff_raw), default=0)
-    max_value = max((abs(int(value)) for value in values_raw), default=0)
+    max_coefficient = _max_abs(coeff_raw)
+    max_value = _max_abs(values_raw)
     if max_terms * max_coefficient * max_value > (1 << 63) - 1:
         raise OverflowError("linear activity might not fit in int64")
     coeff, var = nonempty(coeff_raw), nonempty(var_raw)

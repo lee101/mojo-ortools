@@ -112,21 +112,27 @@ solve/presolve; the following row includes mojo-ortools' Python model overhead.
 
 | workload | Mojo | reference | speedup | comparison |
 | --- | ---: | ---: | ---: | --- |
-| 20k-variable propagation kernel | 18.211 ms | 28.186 ms | 1.55x | OR-Tools solve/presolve |
-| 20k-variable `CpSolver` API | 32.401 ms | 28.186 ms | 0.87x | OR-Tools CP-SAT |
-| 300-node metric TSP | 80.697 ms | 3589.640 ms | 44.48x | OR-Tools `RoutingModel` |
-| 160-customer CVRP | 32.071 ms | 1200.546 ms | 37.43x | OR-Tools `RoutingModel`; cost 1.006x upstream |
-| 100-node directed 2-opt, 3 passes | 0.097 ms | 1112.688 ms | 11514.82x | pure Python |
+| 20k-variable propagation kernel | 1.677 ms | 12.489 ms | 7.45x | OR-Tools solve/presolve |
+| 20k-variable `CpSolver` API | 3.365 ms | 12.489 ms | 3.71x | OR-Tools CP-SAT |
+| 300-node metric TSP | 49.946 ms | 2711.197 ms | 54.28x | OR-Tools `RoutingModel` |
+| 160-customer CVRP | 17.883 ms | 1320.903 ms | 73.86x | OR-Tools `RoutingModel`; cost 1.006x upstream |
+| 100-node directed 2-opt, 3 passes | 0.094 ms | 557.278 ms | 5929.80x | pure Python |
 
-The kernel is faster than the upstream solve on this chain model, but the full
-Python `CpSolver` wrapper is slower. Model construction maintains contiguous CSR
-buffers incrementally, so solving exposes zero-copy NumPy views instead of
-serializing Python expression objects. Final linear-assignment validation uses
-SIMD with a scalar tail. The routing heuristics are much faster on these
-instances, but they are heuristics rather than OR-Tools' full routing search.
-The CVRP quality ratio is included in the table rather than hidden.
+Both the kernel and full Python `CpSolver` wrapper are faster than the upstream
+solve on this chain model. Model construction maintains contiguous CSR buffers
+incrementally, so solving exposes zero-copy NumPy views instead of serializing
+Python expression objects. Overflow guards use vectorized NumPy extrema
+reductions instead of element-by-element Python scans. Final linear-assignment
+validation uses Mojo SIMD with a scalar tail. The routing heuristics are much
+faster on these instances, but they are heuristics rather than OR-Tools' full
+routing search. The CVRP quality ratio is included in the table rather than
+hidden.
 
-No GPU path or parallel CPU kernel is provided.
+No GPU path is provided: sparse propagation and routing move substantially more
+index, bound, and cost data than their arithmetic count can justify, remaining
+below the roughly two operations per byte threshold. Propagation also mutates
+shared variable bounds to a fixed point, so its constraints are not independent
+parallel work; a CPU parallel path would add synchronization and launch overhead.
 
 ## How it works
 
