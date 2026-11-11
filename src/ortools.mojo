@@ -187,9 +187,9 @@ def mot_validate_assignment(
         var activity_vector = SIMD[DType.int64, W](0)
         var t = start
         while t + W <= stop:
-            var index = variables.load[width=W](t)
+            var index = variables.unsafe_load[width=W](t)
             activity_vector += (
-                coeff.load[width=W](t) * values.gather[width=W](index)
+                coeff.unsafe_load[width=W](t) * values.gather[width=W](index)
             )
             t += W
         var activity = activity_vector.reduce_add()
